@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Nautilus — Marine Intelligence Platform for underwater image analysis, object detection, and quality assessment">
+  <title>Nautilus — Marine Intelligence Platform</title>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="ocean-bg"></div>
+  <div class="particles"></div>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Processing...</p>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-section">
+      <div class="logo-icon"><i class="ph-bold ph-waves"></i></div>
+      <div class="logo-text">
+        <h1>NAUTILUS</h1>
+        <p>Marine Intelligence Platform</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>System Online
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="overview"><i class="ph ph-house"></i> Overview</button>
+    <button class="nav-tab" data-tab="collection"><i class="ph ph-database"></i> Data Collection</button>
+    <button class="nav-tab" data-tab="preprocessing"><i class="ph ph-wrench"></i> Preprocessing</button>
+    <button class="nav-tab" data-tab="eda"><i class="ph ph-chart-bar"></i> EDA</button>
+    <button class="nav-tab" data-tab="enhancement"><i class="ph ph-magic-wand"></i> Enhancement</button>
+    <button class="nav-tab" data-tab="detection"><i class="ph ph-target"></i> Detection</button>
+    <button class="nav-tab" data-tab="quality"><i class="ph ph-trend-up"></i> Quality Score</button>
+  </nav>
+
+  <main class="main-content">
+
+    <!-- ═══ OVERVIEW TAB ═══ -->
+    <section id="overview" class="tab-panel active">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-waves icon"></i> Project Overview</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px">
+          <strong style="color:var(--accent-cyan)">Nautilus</strong> is a complete data science pipeline for underwater
+          image analysis.
+          It combines advanced image processing techniques with deep learning to enhance underwater visibility,
+          detect marine species, and quantify image quality using a custom scoring formula.
+        </p>
+        <h3 style="margin:20px 0 16px;color:var(--accent-teal)"><i class="ph-bold ph-git-merge"></i> Data Science
+          Pipeline</h3>
+        <div class="pipeline-flow">
+          <div class="pipeline-step"><span class="step-num">1</span> Data Collection</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">2</span> Preprocessing</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">3</span> EDA</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">4</span> Enhancement</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">5</span> Detection</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">6</span> Quality Score</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ info.total_images }}</div>
+          <div class="stat-label">Total Images</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ info.total_annotations }}</div>
+          <div class="stat-label">Annotations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ info.num_categories }}</div>
+          <div class="stat-label">Categories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ info.avg_objects_per_image }}</div>
+          <div class="stat-label">Avg Objects/Image</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-crosshair icon"></i> Key Features</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="insight-card">
+            <h4><i class="ph-fill ph-target"></i> Object Detection & Species ID</h4>
+            <p>YOLOv8-powered detection identifies marine species with bounding boxes and confidence scores. Output:
+              species name + probability.</p>
+          </div>
+          <div class="insight-card">
+            <h4><i class="ph-fill ph-chart-line-up"></i> Underwater Visibility Score</h4>
+            <p>Custom 0-100 quality index combining brightness, color balance, contrast, and sharpness. Compare
+              before/after enhancement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-lightning icon"></i> Quick Pipeline Run</h3>
+        <p style="color:var(--text-secondary);margin-bottom:16px">Upload an underwater image to run the full pipeline
+          (enhance → detect → score):</p>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" style="display:none" onchange="handlePipelineUpload(this)">
+          <div class="upload-icon"><i class="ph-light ph-image"></i></div>
+          <p><strong>Drop an image here</strong> or click to browse</p>
+          <p class="upload-hint">Supports JPG, PNG, BMP, TIFF, WebP</p>
+        </div>
+        <div id="pipeline-results" style="margin-top:24px"></div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA COLLECTION TAB ═══ -->
+    <section id="collection" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-download-simple icon"></i> Step 1: Data Collection</h2>
+        <div class="summary-box" style="margin-bottom:20px">
+          <strong>Dataset:</strong> {{ dataset_summary.title }}<br>
+          <strong>Source:</strong> {{ dataset_summary.source }}<br>
+          <strong>Format:</strong> {{ info.format | upper if info.format else 'N/A' }}
+          &nbsp;|&nbsp; <strong>Status:</strong>
+          <span class="{{ 'text-success' if info.status == 'loaded' else 'text-error' }}">
+            {{ info.status | capitalize }}
+          </span>
+        </div>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px">{{ dataset_summary.description }}</p>
+        <h4 style="color:var(--accent-teal);margin-bottom:12px"><i class="ph-bold ph-notebook"></i> Justification</h4>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px">{{ dataset_summary.justification }}
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ info.total_images }}</div>
+          <div class="stat-label">Images</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ info.total_annotations }}</div>
+          <div class="stat-label">Annotations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ info.num_categories }}</div>
+          <div class="stat-label">Species</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ '%.0f' | format(info.avg_brightness) if info.avg_brightness else 'N/A' }}</div>
+          <div class="stat-label">Avg Brightness</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-tag icon"></i> Dataset Categories (10 Classes)</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          {% for cat in dataset_summary.categories %}
+          <span
+            style="padding:8px 16px;border-radius:20px;background:rgba(0,255,204,0.1);border:1px solid rgba(0,255,204,0.2);font-size:0.85rem"><i
+              class="ph-bold ph-hash"></i> {{ cat }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if sample_images %}
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-images icon"></i> Sample Images</h3>
+        <div class="samples-grid">
+          {% for img in sample_images %}
+          <div class="sample-thumb"><img src="/static/outputs/{{ img }}" alt="Sample"></div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ═══ PREPROCESSING TAB ═══ -->
+    <section id="preprocessing" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-wrench icon"></i> Step 2: Data Preprocessing</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:20px">
+          Underwater images suffer from noise, color casts, and low contrast. Our preprocessing pipeline
+          applies four sequential transformations to clean and normalize the data before analysis.
+        </p>
+        <div class="pipeline-flow">
+          <div class="pipeline-step"><span class="step-num">1</span> Auto Crop</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">2</span> Resize (640×640)</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">3</span> Denoise</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">4</span> Color Normalize</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-upload-simple icon"></i> Try Preprocessing</h3>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" style="display:none" onchange="handlePreprocessUpload(this)">
+          <div class="upload-icon"><i class="ph-light ph-sliders-horizontal"></i></div>
+          <p><strong>Upload an underwater image</strong> to see preprocessing steps</p>
+          <p class="upload-hint">Each step shown with before/after comparison</p>
+        </div>
+        <div id="preprocess-results" style="margin-top:24px"></div>
+      </div>
+    </section>
+
+    <!-- ═══ EDA TAB ═══ -->
+    <section id="eda" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-chart-bar icon"></i> Step 3: Exploratory Data Analysis</h2>
+        <p style="color:var(--text-secondary);line-height:1.8">
+          Comprehensive visual analysis of the RUOD dataset revealing patterns in species distribution,
+          image properties, and underwater visibility challenges.
+        </p>
+      </div>
+
+      {% if insights %}
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-lightbulb icon"></i> Key Insights</h3>
+        {% for insight in insights %}
+        <div class="insight-card">
+          <h4>{{ insight.title }}</h4>
+          <p>{{ insight.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="plots-grid">
+        {% for plot in plots %}
+        <div class="plot-card">
+          <img src="/static/plots/{{ plot.file }}" alt="{{ plot.name }}" loading="lazy">
+          <div class="plot-info">
+            <div class="plot-name">{{ plot.name }}</div>
+            <div class="plot-desc">{{ plot.description }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- ═══ ENHANCEMENT TAB ═══ -->
+    <section id="enhancement" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-magic-wand icon"></i> Step 4: Image Enhancement</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:16px">
+          Five sequential enhancement techniques to restore underwater image quality.
+          Each step targets a specific degradation: contrast, color cast, brightness, and sharpness.
+        </p>
+        <div class="pipeline-flow">
+          <div class="pipeline-step"><span class="step-num">1</span> CLAHE</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">2</span> White Balance</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">3</span> Gamma</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">4</span> Color Cast</div>
+          <span class="pipeline-arrow"><i class="ph-bold ph-arrow-right"></i></span>
+          <div class="pipeline-step"><span class="step-num">5</span> Sharpen</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-upload-simple icon"></i> Upload Image to Enhance</h3>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" style="display:none" onchange="handleEnhancementUpload(this)">
+          <div class="upload-icon"><i class="ph-light ph-sparkle"></i></div>
+          <p><strong>Drop an underwater image</strong> or click to browse</p>
+          <p class="upload-hint">See step-by-step enhancement with before/after for each technique</p>
+        </div>
+        <div id="enhancement-results" style="margin-top:24px"></div>
+      </div>
+    </section>
+
+    <!-- ═══ DETECTION TAB ═══ -->
+    <section id="detection" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-target icon"></i> Step 5: Object Detection & Species ID</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:16px">
+          Powered by YOLOv8 deep learning model. Upload an underwater image to detect and identify
+          marine species with bounding boxes and confidence percentages.
+        </p>
+        <div class="summary-box">
+          <strong>Model:</strong> YOLOv8 (Ultralytics) &nbsp;|&nbsp;
+          <strong>Example Output:</strong> "This image contains a Sea Cucumber (87% confidence) and Coral (72% confidence)"
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-upload-simple icon"></i> Upload Image for Detection</h3>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" style="display:none" onchange="handleDetectionUpload(this)">
+          <div class="upload-icon"><i class="ph-light ph-scan"></i></div>
+          <p><strong>Drop an underwater image</strong> or click to browse</p>
+          <p class="upload-hint">YOLO will detect and label all visible marine species</p>
+        </div>
+        <div id="detection-results" style="margin-top:24px"></div>
+      </div>
+    </section>
+
+    <!-- ═══ QUALITY SCORE TAB ═══ -->
+    <section id="quality" class="tab-panel">
+      <div class="glass-card">
+        <h2 class="card-title"><i class="ph-fill ph-trend-up icon"></i> Step 6: Underwater Visibility Score (UVS)</h2>
+        <p style="color:var(--text-secondary);line-height:1.8;margin-bottom:16px">
+          A custom 0–100 quality index measuring underwater image visibility. The formula combines four
+          weighted components to produce a single actionable score.
+        </p>
+        <div class="summary-box" style="font-family:'Orbitron',monospace;text-align:center;font-size:1rem;padding:24px">
+          UVS = 0.20 × Brightness + 0.30 × ColorBalance + 0.25 × Contrast + 0.25 × Sharpness
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.3rem">Brightness</div>
+          <div class="stat-label">Weight: 20% — Mean luminance distance from ideal (128)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.3rem">Color Balance</div>
+          <div class="stat-label">Weight: 30% — Channel deviation from gray-world equilibrium</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.3rem">Contrast</div>
+          <div class="stat-label">Weight: 25% — Standard deviation of luminance</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:1.3rem">Sharpness</div>
+          <div class="stat-label">Weight: 25% — Laplacian variance (edge energy)</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3 class="card-title"><i class="ph-fill ph-upload-simple icon"></i> Upload Image to Score</h3>
+        <p style="color:var(--text-secondary);margin-bottom:16px">Image will be enhanced first, then both original and
+          enhanced versions are scored for comparison.</p>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" style="display:none" onchange="handleQualityUpload(this)">
+          <div class="upload-icon"><i class="ph-light ph-gauge"></i></div>
+          <p><strong>Drop an underwater image</strong> or click to browse</p>
+          <p class="upload-hint">See before/after UVS scores with component breakdown</p>
+        </div>
+        <div id="quality-results" style="margin-top:24px"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer
+    style="text-align:center;padding:30px;color:var(--text-muted);font-size:0.8rem;border-top:1px solid var(--border-color)">
+    <p>Nautilus — Marine Intelligence Platform &nbsp;|&nbsp; Introduction to Data Science — Spring 2026</p>
+    <p style="margin-top:4px">Bahria University, Islamabad Campus &nbsp;|&nbsp; BS(CS)-6B</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    function handlePreprocessUpload(input) {
+      if (!input.files[0]) return;
+      showLoading('Running preprocessing pipeline...');
+      const fd = new FormData();
+      fd.append('image', input.files[0]);
+      apiCall('/api/preprocess', fd).then(data => {
+        hideLoading();
+        const c = document.getElementById('preprocess-results');
+        if (!c) return;
+        if (data.error) { c.innerHTML = '<p style="color:var(--accent-pink)">' + data.error + '</p>'; return; }
+        let h = '<div class="enhancement-steps">';
+        (data.steps || []).forEach((s, i) => {
+          h += '<div class="enh-step"><div class="enh-step-header"><div class="enh-step-num">' + (i + 1) + '</div><div><div class="enh-step-name">' + s.name + '</div><div class="enh-step-desc">' + s.description + '</div></div></div>';
+          h += '<div class="enh-img"><img src="' + s.before_image + '" alt="Before"><div class="enh-img-label">Before</div></div>';
+          h += '<div class="enh-img"><img src="' + s.after_image + '" alt="After"><div class="enh-img-label">After</div></div></div>';
+        });
+        h += '</div>';
+        c.innerHTML = h;
+      }).catch(err => { hideLoading(); alert('Error: ' + err.message); });
+    }
+  </script>
+</body>
+
+</html>
