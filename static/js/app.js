@@ -1,6 +1,3 @@
-/* ═══════════════════════════════════════
-   NAUTILUS — Frontend JavaScript
-   ═══════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
@@ -9,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initAccordions();
 });
 
-/* ── Accordion Logic ────────────────────── */
 function initAccordions() {
   document.querySelectorAll('.accordion-header').forEach(header => {
     header.addEventListener('click', () => {
@@ -24,7 +20,6 @@ function toggleDSSource() {
   document.getElementById('ds-source-dataset').style.display = isDataset ? 'block' : 'none';
   document.getElementById('ds-source-upload').style.display = isDataset ? 'none' : 'block';
   
-  // Reset status
   document.querySelectorAll('.pipeline-accordion:not(.expanded)').forEach(acc => {
     const status = acc.querySelector('.step-status');
     if (status && !status.classList.contains('success')) {
@@ -33,7 +28,6 @@ function toggleDSSource() {
   });
 }
 
-/* ── Tab Navigation ────────────────────── */
 function initTabs() {
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -46,7 +40,6 @@ function initTabs() {
   });
 }
 
-/* ── Floating Particles ────────────────── */
 function initParticles() {
   const container = document.querySelector('.particles');
   if (!container) return;
@@ -60,7 +53,6 @@ function initParticles() {
   }
 }
 
-/* ── Upload Zones ──────────────────────── */
 function initUploadZones() {
   document.querySelectorAll('.upload-zone').forEach(zone => {
     const input = zone.querySelector('input[type="file"]');
@@ -78,7 +70,6 @@ function initUploadZones() {
   });
 }
 
-/* ── Loading Overlay ───────────────────── */
 function showLoading(msg) {
   let ov = document.getElementById('loading-overlay');
   if (ov) { ov.querySelector('p').textContent = msg || 'Processing...'; ov.classList.add('show'); }
@@ -88,13 +79,11 @@ function hideLoading() {
   if (ov) ov.classList.remove('show');
 }
 
-/* ── API Calls ─────────────────────────── */
 async function apiCall(endpoint, formData) {
   const res = await fetch(endpoint, { method: 'POST', body: formData });
   return res.json();
 }
 
-/* ── Upload & Detect ───────────────────── */
 function handleDetectionUpload(input) {
   if (!input.files[0]) return;
   const file = input.files[0];
@@ -137,7 +126,6 @@ function displayDetectionResults(data) {
   container.innerHTML = html;
 }
 
-/* ── Upload & Enhance ──────────────────── */
 function handleEnhancementUpload(input) {
   if (!input.files[0]) return;
   showLoading('Enhancing image...');
@@ -167,7 +155,6 @@ function displayEnhancementResults(data) {
   container.innerHTML = html;
 }
 
-/* ── Upload & Score ────────────────────── */
 function handleQualityUpload(input) {
   if (!input.files[0]) return;
   showLoading('Computing quality scores...');
@@ -232,7 +219,6 @@ function buildGauge(label, score, grade, color, circ) {
   </div>`;
 }
 
-/* ── Full Pipeline ─────────────────────── */
 function handlePipelineUpload(input) {
   if (!input.files[0]) return;
   showLoading('Running full pipeline...');
@@ -257,7 +243,6 @@ function handlePipelineUpload(input) {
   }).catch(err => { hideLoading(); alert('Pipeline error: ' + err.message); });
 }
 
-/* ── 9-Step Data Science Pipeline ───────── */
 async function runDS_Pipeline() {
   const isDataset = document.querySelector('input[name="ds-source"]:checked').value === 'dataset';
   const count = document.getElementById('ds-image-count').value;
@@ -272,7 +257,6 @@ async function runDS_Pipeline() {
   btn.disabled = true;
   btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Executing Pipeline...';
 
-  // Helper to update step UI
   const updateStep = (stepNum, status, htmlContent, isSuccess = true) => {
     const statusSpan = document.getElementById(`status-step${stepNum}`);
     const contentDiv = document.getElementById(`content-step${stepNum}`);

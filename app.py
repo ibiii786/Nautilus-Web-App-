@@ -1,8 +1,3 @@
-"""
-Pelagix — Flask Application
-==============================
-Main entry point for the Underwater Intelligence Dashboard.
-"""
 
 import os, uuid, base64, traceback
 import cv2
@@ -23,13 +18,11 @@ app.config['MAX_CONTENT_LENGTH'] = config.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 @app.after_request
 def add_header(response):
-    # Prevent browser caching of UI files so updates are immediately visible
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
     return response
 
-# ── Global state ─────────────────────────
 dataset_cache = None
 yolo_model = None
 eda_plots = []
