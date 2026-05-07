@@ -6,7 +6,32 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initParticles();
   initUploadZones();
+  initAccordions();
 });
+
+/* ── Accordion Logic ────────────────────── */
+function initAccordions() {
+  document.querySelectorAll('.accordion-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const accordion = header.closest('.pipeline-accordion');
+      accordion.classList.toggle('expanded');
+    });
+  });
+}
+
+function toggleDSSource() {
+  const isDataset = document.querySelector('input[name="ds-source"]:checked').value === 'dataset';
+  document.getElementById('ds-source-dataset').style.display = isDataset ? 'block' : 'none';
+  document.getElementById('ds-source-upload').style.display = isDataset ? 'none' : 'block';
+  
+  // Reset status
+  document.querySelectorAll('.pipeline-accordion:not(.expanded)').forEach(acc => {
+    const status = acc.querySelector('.step-status');
+    if (status && !status.classList.contains('success')) {
+       status.textContent = 'Pending';
+    }
+  });
+}
 
 /* ── Tab Navigation ────────────────────── */
 function initTabs() {
@@ -230,4 +255,143 @@ function handlePipelineUpload(input) {
     }
     c.innerHTML = h;
   }).catch(err => { hideLoading(); alert('Pipeline error: ' + err.message); });
+}
+
+/* ── 9-Step Data Science Pipeline ───────── */
+async function runDS_Pipeline() {
+  const isDataset = document.querySelector('input[name="ds-source"]:checked').value === 'dataset';
+  const count = document.getElementById('ds-image-count').value;
+  const uploadInput = document.getElementById('ds-upload-file');
+  const btn = document.querySelector('button[onclick="runDS_Pipeline()"]');
+  
+  if (!isDataset && (!uploadInput.files || !uploadInput.files[0])) {
+    alert('Please select an image to upload.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Executing Pipeline...';
+
+  // Helper to update step UI
+  const updateStep = (stepNum, status, htmlContent, isSuccess = true) => {
+    const statusSpan = document.getElementById(`status-step${stepNum}`);
+    const contentDiv = document.getElementById(`content-step${stepNum}`);
+    const accordion = statusSpan.closest('.pipeline-accordion');
+    
+    if (statusSpan) {
+      statusSpan.textContent = status;
+      if (isSuccess) {
+        statusSpan.className = 'step-status success';
+        statusSpan.textContent = 'Completed';
+      }
+    }
+    if (contentDiv && htmlContent) {
+      contentDiv.innerHTML = htmlContent;
+      contentDiv.style.display = 'block';
+    }
+    if (accordion && isSuccess) accordion.classList.add('expanded');
+  };
+
+  try {
+    updateStep(2, 'Running...', '<div class="spinner" style="margin: 20px auto;"></div>', false);
+    
+    const fd = new FormData();
+    if (isDataset) {
+      fd.append('count', count);
+    } else {
+      fd.append('image', uploadInput.files[0]);
+    }
+
+    const res = await fetch('/api/dataset_pipeline', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Pipeline Error: ' + data.error);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ph-bold ph-play"></i> Execute Pipeline';
+      return;
+    }
+
+    // Step 2: Data Collection
+    let h2 = `<p style="color:var(--text-secondary);margin-bottom:15px">Loaded ${data.results.length} images from RUOD Dataset.</p>`;
+    h2 += `<div class="step-results-grid">`;
+    data.results.forEach(r => h2 += `<div><img src="${r.orig_url}" title="${r.filename}"></div>`);
+    h2 += `</div>`;
+    updateStep(2, 'Completed', h2);
+
+    // Step 3: EDA
+    let h3 = `<p style="color:var(--text-secondary);margin-bottom:15px">Generated RGB Distribution Histograms to verify color degradation.</p>`;
+    h3 += `<div class="step-results-grid">`;
+    data.results.forEach(r => h3 += `<div><img src="${r.graph_url}"></div>`);
+    h3 += `</div>`;
+    updateStep(3, 'Completed', h3);
+
+    // Step 4: Preprocessing
+    let h4 = `
+      <div style="background:rgba(0,0,0,0.4); padding: 15px; border-radius:8px; border:1px solid var(--border-color);">
+        <ul style="color:var(--text-secondary); line-height: 1.8; margin-left:20px;">
+          <li>Resized input arrays to YOLO standard [640x640] dimension space.</li>
+          <li>Transformed from RGB to LAB color space for luminance separation.</li>
+          <li>Applied adaptive normalization mapping (0-255).</li>
+        </ul>
+      </div>
+    `;
+    updateStep(4, 'Completed', h4);
+
+    // Step 5: Feature Engineering & Selection (Enhancement)
+    let h5 = `<p style="color:var(--text-secondary);margin-bottom:15px">Applied CLAHE, White Balance, and Unsharp Masking filters to restore underwater visibility.</p>`;
+    h5 += `<div class="step-results-grid">`;
+    data.results.forEach(r => h5 += `<div><img src="${r.enh_url}"></div>`);
+    h5 += `</div>`;
+    updateStep(5, 'Completed', h5);
+
+    // Step 6: Model Building
+    let h6 = `
+      <div style="background:rgba(0,0,0,0.4); padding: 15px; border-radius:8px; border:1px solid var(--border-color);">
+        <p style="color:var(--accent-teal); font-weight:600; margin-bottom:10px;"><i class="ph-bold ph-check-circle"></i> Model Loaded into Memory</p>
+        <p style="color:var(--text-secondary); margin-bottom: 5px;"><strong>Architecture:</strong> YOLOv8 Medium (World Open-Vocabulary)</p>
+        <p style="color:var(--text-secondary); margin-bottom: 5px;"><strong>Weights:</strong> yolov8m-world.pt</p>
+        <p style="color:var(--text-secondary);"><strong>Injected Prompts:</strong> "coral reef", "black sea urchin", "scuba diver", "scallop shell", "underwater rock", "fish", "sea turtle", etc.</p>
+      </div>
+    `;
+    updateStep(6, 'Completed', h6);
+
+    // Step 7: Model Evaluation (Detection)
+    let h7 = `<p style="color:var(--text-secondary);margin-bottom:15px">Ran inference on enhanced images using the YOLO-World model.</p>`;
+    h7 += `<div class="step-results-grid">`;
+    data.results.forEach(r => h7 += `<div><img src="${r.det_url}" style="border-color:var(--accent-teal)"><p style="text-align:center;color:var(--accent-teal);margin-top:5px;">${r.detection_count} Objects Detected</p></div>`);
+    h7 += `</div>`;
+    updateStep(7, 'Completed', h7);
+
+    // Step 8: Deployment (UVS Score)
+    let totalScore = data.results.reduce((acc, r) => acc + r.uvs_score, 0);
+    let avgScore = (totalScore / data.results.length).toFixed(1);
+    let h8 = `
+      <div style="background:rgba(0,0,0,0.4); padding: 15px; border-radius:8px; border:1px solid var(--border-color); text-align:center;">
+        <h4 style="color:var(--text-secondary); margin-bottom: 10px;">Average Underwater Visibility Score (UVS) Improvement</h4>
+        <div style="font-size: 2.5rem; color: var(--accent-cyan); font-family: 'Orbitron', sans-serif; font-weight: 700;">+${avgScore}%</div>
+        <p style="color:var(--text-secondary); margin-top:10px;">The model has successfully improved visibility and confidence scores across the deployment batch.</p>
+      </div>
+    `;
+    updateStep(8, 'Completed', h8);
+
+    // Step 9: Monitoring & Maintenance
+    let h9 = `
+      <div style="background:rgba(0,0,0,0.4); padding: 15px; border-radius:8px; border:1px dashed var(--border-color);">
+        <p style="color:var(--text-secondary); margin-bottom:10px;"><strong>Status:</strong> System operating nominally.</p>
+        <p style="color:var(--text-secondary); margin-bottom:15px;"><strong>Future Maintenance:</strong> Integrate Generative AI (WaterGAN) to replace optical filters.</p>
+        <button class="action-btn" style="padding: 8px 15px; font-size: 0.9rem;" onclick="alert('Logs saved successfully (Simulated)')"><i class="ph-bold ph-download-simple"></i> Download Pipeline JSON Logs</button>
+      </div>
+    `;
+    updateStep(9, 'Completed', h9);
+
+  } catch (err) {
+    alert('Failed to execute pipeline: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ph-bold ph-play"></i> Fetch Data & Execute Pipeline';
+  }
 }

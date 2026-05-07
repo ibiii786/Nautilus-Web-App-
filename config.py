@@ -34,8 +34,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
 # ──────────────────────────────────────────────
 # YOLO Model Settings
 # ──────────────────────────────────────────────
-YOLO_MODEL = "yolov8s-world.pt"     # YOLO-World model for specific open-vocabulary classes
-YOLO_CONFIDENCE = 0.02            # minimum confidence threshold (lowered for zero-shot YOLO-World)
+YOLO_MODEL = "yolov8m-world.pt"     # Upgraded to Medium model for significantly better accuracy
+YOLO_CONFIDENCE = 0.05            # Increased confidence to reduce false positives
 YOLO_IOU = 0.45                   # NMS IoU threshold
 
 # ──────────────────────────────────────────────
@@ -64,8 +64,8 @@ for d in [PLOTS_DIR, OUTPUTS_DIR, UPLOAD_DIR]:
 # RUOD Category Names (10 classes)
 # ──────────────────────────────────────────────
 RUOD_CLASSES = [
-    "holothurian",   # sea cucumber
-    "echinus",       # sea urchin
+    "holothurian",
+    "echinus",
     "scallop",
     "starfish",
     "fish",
@@ -76,16 +76,18 @@ RUOD_CLASSES = [
     "jellyfish",
 ]
 
-# Friendly display names
+# Friendly display names (Used as text prompts for YOLO-World)
+# Using highly descriptive terms drastically improves Zero-Shot accuracy
 RUOD_DISPLAY_NAMES = {
-    "holothurian": "Sea Cucumber",
-    "echinus": "Sea Urchin",
-    "scallop": "Scallop",
-    "starfish": "Starfish",
-    "fish": "Fish",
-    "corals": "Coral",
-    "diver": "Diver",
-    "cuttlefish": "Cuttlefish",
-    "turtle": "Sea Turtle",
-    "jellyfish": "Jellyfish",
+    "holothurian": "sea cucumber",
+    "echinus": "black sea urchin",
+    "scallop": "scallop shell",
+    "starfish": "starfish",
+    "fish": "fish",
+    "corals": "coral reef",
+    "diver": "scuba diver",
+    "cuttlefish": "cuttlefish",
+    "turtle": "sea turtle",
+    "jellyfish": "jellyfish",
+    "rocks": "underwater rock",
 }

@@ -1,9 +1,3 @@
-"""
-Pelagix — Object Detection
-============================
-Step 5: YOLOv8-based underwater object detection & species identification.
-"""
-
 import cv2
 import numpy as np
 import os
@@ -12,13 +6,23 @@ import os
 def load_model(model_name="yolov8s-world.pt"):
     from ultralytics import YOLO
     import config
+    from pathlib import Path
+
+    # Prefer the custom fine-tuned RUOD model if it exists
+    custom_model = Path(__file__).parent.parent / "models" / "ruod_nautilus" / "weights" / "best.pt"
+    if custom_model.exists():
+        print(f"[INFO] Loading custom RUOD model: {custom_model}")
+        model = YOLO(str(custom_model))
+        return model
+
+    # Fallback: YOLO-World with marine class prompts
+    print(f"[INFO] Custom model not found. Using YOLO-World. Run train_ruod.py for best accuracy.")
     model = YOLO(model_name)
-    # Set classes for open-vocabulary detection using YOLO-World
     classes = list(config.RUOD_DISPLAY_NAMES.values())
     try:
         model.set_classes(classes)
     except AttributeError:
-        pass # Not a YOLO-World model
+        pass
     return model
 
 

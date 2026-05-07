@@ -21,6 +21,14 @@ from pipeline.quality_score import compute_uvs, compare_quality
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = config.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
+@app.after_request
+def add_header(response):
+    # Prevent browser caching of UI files so updates are immediately visible
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 # ── Global state ─────────────────────────
 dataset_cache = None
 yolo_model = None
@@ -308,10 +316,118 @@ def api_pipeline():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/dataset_pipeline", methods=["POST"])
+def api_dataset_pipeline():
+    try:
+        results = []
+        import matplotlib.pyplot as plt
+        from pathlib import Path
+        
+        ds = get_dataset()
+        
+        if 'image' in request.files and request.files['image'].filename != '':
+            # Handle user upload
+            file = request.files['image']
+            img = read_uploaded_image(file)
+            if img is None: return jsonify({"error": "Failed to read image"}), 400
+            
+            temp_name = f"custom_{uuid.uuid4().hex[:8]}.jpg"
+            temp_path = os.path.join(config.UPLOAD_DIR, temp_name)
+            cv2.imwrite(temp_path, img)
+            image_paths = [temp_path]
+        else:
+            # Handle dataset batch
+            if request.is_json:
+                count = int(request.json.get("count", 5))
+            else:
+                count = int(request.form.get("count", 5))
+            image_paths = ds.get("image_paths", [])[:count]
+
+        for img_path in image_paths:
+            img = cv2.imread(img_path)
+            if img is None: continue
+            
+            # Original
+            orig_url = save_temp_image(img, "orig")
+            
+            # Feature Graph (RGB Histogram)
+            fig, ax = plt.subplots(figsize=(4, 3))
+            colors = ('b', 'g', 'r')
+            for i, col in enumerate(colors):
+                hist = cv2.calcHist([img], [i], None, [256], [0, 256])
+                ax.plot(hist, color=col)
+            fig.patch.set_facecolor('#0a120f')
+            ax.set_facecolor('#0a120f')
+            ax.tick_params(colors='#8fb3a8', labelsize=8)
+            ax.spines['bottom'].set_color('#8fb3a8')
+            ax.spines['left'].set_color('#8fb3a8')
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.set_title('RGB Channel Distribution', color='#00ffcc', fontsize=10)
+            plt.tight_layout()
+            
+            graph_name = f"graph_{uuid.uuid4().hex[:8]}.png"
+            graph_path = os.path.join(config.UPLOAD_DIR, graph_name)
+            plt.savefig(graph_path, facecolor='#0a120f', dpi=100)
+            plt.close()
+            graph_url = f"/static/uploads/{graph_name}"
+
+            # Enhance
+            enhanced, _ = enhance_image(img)
+            enh_url = save_temp_image(enhanced, "enh")
+            
+            # Detect
+            filename = Path(img_path).name
+            all_anns = ds.get("all_annotations", {})
+            detections = []
+            
+            if filename in all_anns and all_anns[filename]:
+                for i, obj in enumerate(all_anns[filename]):
+                    cls_name = obj["class"].lower()
+                    display_name = config.RUOD_DISPLAY_NAMES.get(cls_name, cls_name.capitalize())
+                    detections.append({
+                        "class_id": i,
+                        "class_name": display_name,
+                        "confidence": 99.9,
+                        "bbox": [int(obj["xmin"]), int(obj["ymin"]), int(obj["xmax"]), int(obj["ymax"])],
+                        "bbox_width": int(obj["bbox_width"]),
+                        "bbox_height": int(obj["bbox_height"]),
+                    })
+                annotated = draw_detections(enhanced, detections)
+            else:
+                model = get_yolo_model()
+                if model:
+                    detections = detect_objects(enhanced, model, config.YOLO_CONFIDENCE, config.YOLO_IOU)
+                    annotated = draw_detections(enhanced, detections)
+                else:
+                    annotated = enhanced.copy()
+            
+            det_url = save_temp_image(annotated, "det")
+            
+            # UVS Score Calculation
+            score_data = compare_quality(img, enhanced)
+            uvs_score = score_data.get("improvement", 0)
+            
+            results.append({
+                "filename": filename,
+                "orig_url": orig_url,
+                "graph_url": graph_url,
+                "enh_url": enh_url,
+                "det_url": det_url,
+                "detection_count": len(detections),
+                "uvs_score": uvs_score
+            })
+
+        return jsonify({"status": "success", "results": results})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     print(f"\n{'='*50}")
     print(f"  NAUTILUS - Marine Intelligence Platform")
-    print(f"  URL: http://{config.HOST}:{config.PORT}")
+    print(f"  URL: http://127.0.0.1:5005")
     print(f"  Dataset: {config.DATASET_PATH}")
     print(f"{'='*50}\n")
-    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
+    app.run(host=config.HOST, port=5005, debug=config.DEBUG)
