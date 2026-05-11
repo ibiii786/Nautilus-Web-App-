@@ -35,3 +35,9 @@ Then open http://127.0.0.1:5000
 ## Tech Stack
 
 Python · Flask · OpenCV · Ultralytics YOLOv8 · NumPy · Pandas · Matplotlib · Seaborn
+
+## Contributors
+
+This project is maintained by:
+- Ghulam Ibrahim
+- Muhammad Umar
